@@ -14,6 +14,6 @@ Python: Lenguaje principal para la lógica del juego y la implementación de las
 
 Visual Studio Code (VS Code): Entorno de desarrollo utilizado para escribir y organizar el código fuente.
 
-SourceTree: Herramienta gráfica para el manejo de versiones, integración con Git y GitHub.
+GitKraken: Herramienta gráfica para el manejo de versiones, integración con Git y GitHub.
 
 API: Se planea la integración con una API para agregar funcionalidades externas, como almacenar puntajes o compartir resultados.
