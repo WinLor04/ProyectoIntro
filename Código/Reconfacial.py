@@ -5,6 +5,7 @@ import numpy as np
 import threading
 import time
 from Botones import Boton
+from Guardar import Guardar
 USERS_DIR = "users_lbph"
 
 class ReconFacial:
@@ -46,12 +47,24 @@ class ReconFacial:
 
 
     def registrar_rostro(self):
+        """
+        Registra un nuevo rostro para un usuario.
+        Verifica si el usuario ya existe en el sistema (clave o rostro).
+        """
         nombre = self.pedir_texto("Ingresa tu nombre de usuario:")
         if not nombre:
             self.mensaje("Nombre inválido.", error=True)
             return
 
         nombre = nombre.strip().lower()
+
+        # Verificar si el usuario ya existe (clave o rostro)
+        guardar = Guardar()
+        if guardar.verificar_usuario_existe(nombre):
+            self.mensaje("¡Este nombre de usuario ya está registrado!", error=True)
+            return
+
+        # Si el usuario no existe, continuar con el registro del rostro
         cap = cv2.VideoCapture(0)
         face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
         count = 0

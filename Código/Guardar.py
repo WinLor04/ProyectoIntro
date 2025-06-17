@@ -10,6 +10,10 @@ class Guardar:
                 json.dump({}, f, indent=4)
 
     def guardar_usuario(self, usuario, clave):
+        """
+        Guarda un nuevo usuario y su clave en el archivo JSON.
+        Retorna True si se guardó correctamente, False si ya existe.
+        """
         try:
             with open(self.archivo, "r", encoding="utf-8") as f:
                 datos = json.load(f)
@@ -35,6 +39,7 @@ class Guardar:
         except Exception as e:
             print(f"Error al verificar: {e}")
             return False
+    
     def verificar_usuario_por_rostro(self, nombre_usuario):
         """
         Verifica si el nombre reconocido por rostro existe en el archivo de usuarios registrados.
@@ -47,3 +52,32 @@ class Guardar:
             print(f"Error al verificar usuario por rostro: {e}")
             return False
 
+    def verificar_usuario_existe(self, nombre_usuario):
+        """
+        Verifica si un usuario existe en cualquiera de los registros: clave, rostro (json), o rostro (npy).
+        """
+        try:
+            # Verificar en archivo de usuarios con clave
+            with open(self.archivo, "r", encoding="utf-8") as f:
+                datos = json.load(f)
+            if nombre_usuario in datos:
+                return True  # Si existe en el archivo de clave, retornamos True
+
+            # Verificar en archivo de usuarios con rostro (JSON)
+            rostro_archivo = "premios_facial.json"  # Archivo donde están los usuarios faciales
+            if os.path.exists(rostro_archivo):
+                with open(rostro_archivo, "r", encoding="utf-8") as f:
+                    datos_rostro = json.load(f)
+                if nombre_usuario in datos_rostro:
+                    return True  # Si existe en el archivo facial, retornamos True
+
+            # Verificar en archivo de usuarios faciales (npy)
+            rostro_npy_archivo = f"users_lbph/{nombre_usuario}.npy"
+            if os.path.exists(rostro_npy_archivo):
+                return True  # Si existe el archivo .npy, retornamos True
+
+            # Si no se encuentra en ninguno de los archivos, retornamos False
+            return False
+        except Exception as e:
+            print(f"Error al verificar usuario en clave, rostro (json) o rostro (npy): {e}")
+            return False

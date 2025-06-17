@@ -4,8 +4,7 @@ import pygame
 class Boton:
     sonido_global = None  # Sonido compartido entre todos los botones
 
-    def __init__(self, texto, x, y, ancho, alto, accion, fuente, interfaz=None,
-                 bg_color=(79, 180, 205), fg_color=(0, 0, 0)):
+    def __init__(self, texto, x, y, ancho, alto, accion, fuente, interfaz=None, bg_color=(79, 180, 205), fg_color=(0, 0, 0)):
         self.texto = texto
         self.rect = pygame.Rect(x, y, ancho, alto)
         self.accion = accion
@@ -21,6 +20,9 @@ class Boton:
         self.y = y
 
     def dibujar(self, surface):
+        """
+        Dibuja el botón en la superficie dada.
+        """
         if self.interfaz and self not in self.interfaz.botones_visibles:
             self.interfaz.botones_visibles.append(self)
 
@@ -52,6 +54,10 @@ class Boton:
             surface.blit(texto_render, texto_rect)
 
     def manejar_evento(self, evento):
+        """
+        Maneja los eventos del botón.
+        Retorna True si el botón fue presionado, False en caso contrario.
+        """
         if evento.type == pygame.MOUSEBUTTONDOWN:
             if self.rect.collidepoint(evento.pos):
                 if Boton.sonido_global:
