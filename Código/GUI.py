@@ -194,6 +194,8 @@ class Interfaz:
             pygame.display.flip()
             self.reloj.tick(self.FPS)
 
+
+
     def premios(self):
         self.botones_visibles.clear()
         boton_volver = Boton("Volver", self.ANCHO // 2 - 150, self.ALTO - 100, 300, 60, self.pantalla_menu_principal, self.fuente, interfaz=self)
@@ -238,6 +240,8 @@ class Interfaz:
             self.VerificarCursor()
             pygame.display.flip()
             self.reloj.tick(self.FPS)
+
+
 
     def como_jugar(self):
         self.botones_visibles.clear()
