@@ -9,6 +9,7 @@ from Reconfacial import ReconFacial
 import threading
 from JuegoPatrones import JuegoPatrones
 from Sonido import Sonido
+from TipoCambioBCCR import TipoCambioBCCR
 import time
 
 sonido = Sonido()
@@ -123,37 +124,60 @@ class Interfaz:
         self.botones_visibles.clear()
         boton_volver = Boton("Volver", self.ANCHO // 2 - 150, self.ALTO - 100, 300, 60, self.pantalla_menu_principal, self.fuente, interfaz=self)
 
-        texto = (
-            "Desarrollado por:\n"
-            "Dylan\n"
-            "Windell\n\n"
-            "Juego\n"
-            "Proyecto"
-        )
-
-        fuente_titulo = pygame.font.SysFont('Segoe UI', 36, True)
+        # Fuentes para cada parte
+        fuente_titulo = pygame.font.SysFont('Segoe UI', 40, True)
+        fuente_subtitulo = pygame.font.SysFont('Segoe UI', 32, True)
+        fuente_juego = pygame.font.SysFont('Segoe UI', 28, True)
         fuente_texto = pygame.font.SysFont('Segoe UI', 24)
+
+        # Cargar imágenes con nueva ruta
+        try:
+            imagen_messi = pygame.image.load(os.path.join("assets", "Imágenes", "jugadores", "messi.png"))
+            imagen_cristiano = pygame.image.load(os.path.join("assets", "Imágenes", "jugadores", "cristiano.png"))
+
+            imagen_messi = pygame.transform.scale(imagen_messi, (200, 200))
+            imagen_cristiano = pygame.transform.scale(imagen_cristiano, (200, 200))
+        except Exception as e:
+            print("Error cargando imágenes:", e)
+            imagen_messi = None
+            imagen_cristiano = None
 
         while True:
             self.pantalla.fill(self.FONDO_GRIS)
             if self.fondo:
                 self.pantalla.blit(self.fondo, (0, 0))
 
+            y = 80
+
             # Título
-            titulo_render = fuente_titulo.render("About", True, self.BLANCO)
-            self.pantalla.blit(titulo_render, (self.ANCHO // 2 - titulo_render.get_width() // 2, 100))
+            titulo_render = fuente_titulo.render("Instituto Tecnológico de Costa Rica", True, self.BLANCO)
+            self.pantalla.blit(titulo_render, (self.ANCHO // 2 - titulo_render.get_width() // 2, y))
+            y += titulo_render.get_height() + 20
 
-            # Texto multilinea centrado
-            y_offset = 180
-            for linea in texto.split('\n'):
-                linea_render = fuente_texto.render(linea, True, self.BLANCO)
-                self.pantalla.blit(linea_render, (self.ANCHO // 2 - linea_render.get_width() // 2, y_offset))
-                y_offset += linea_render.get_height() + 8
+            # Subtítulo
+            subtitulo_render = fuente_subtitulo.render("Ingeniería en Computadores", True, self.BLANCO)
+            self.pantalla.blit(subtitulo_render, (self.ANCHO // 2 - subtitulo_render.get_width() // 2, y))
+            y += subtitulo_render.get_height() + 20
 
-            # Botón Volver
+            # Nombre del juego
+            juego_render = fuente_juego.render("Memory Game", True, self.BLANCO)
+            self.pantalla.blit(juego_render, (self.ANCHO // 2 - juego_render.get_width() // 2, y))
+            y += juego_render.get_height() + 40
+
+            # Créditos
+            creditos_render = fuente_texto.render("Desarrollado por Windell Loria y Dylan Bonilla", True, self.BLANCO)
+            self.pantalla.blit(creditos_render, (self.ANCHO // 2 - creditos_render.get_width() // 2, y))
+
+            # Imágenes de jugadores
+            if imagen_messi:
+                self.pantalla.blit(imagen_messi, (80, 150))  # Izquierda
+            if imagen_cristiano:
+                self.pantalla.blit(imagen_cristiano, (self.ANCHO - 280, 150))  # Derecha
+
+            # Botón volver
             boton_volver.dibujar(self.pantalla)
 
-            # Manejo de eventos
+            # Eventos
             for evento in pygame.event.get():
                 if evento.type == pygame.QUIT:
                     self.salir()
@@ -163,6 +187,8 @@ class Interfaz:
             pygame.display.flip()
             self.reloj.tick(self.FPS)
 
+
+
     def premios(self):
         self.botones_visibles.clear()
         boton_volver = Boton("Volver", self.ANCHO // 2 - 150, self.ALTO - 100, 300, 60, self.pantalla_menu_principal, self.fuente, interfaz=self)
@@ -170,7 +196,14 @@ class Interfaz:
         fuente_titulo = pygame.font.SysFont('Segoe UI', 36, True)
         fuente_texto = pygame.font.SysFont('Segoe UI', 24)
 
-        texto_info = "Premios (en dólares)\n\nAquí va la info de la API BCCR..."
+        # Obtener tipo de cambio desde la API
+        try:
+            bccr = TipoCambioBCCR("d.bonilla.3@estudiantec.cr", "5B3R6MS2OE")
+            compra = bccr.obtener_compra()
+            venta = bccr.obtener_venta()
+            texto_info = f"Tipo de cambio:\n\nCompra: {compra:.2f} $\nVenta: {venta:.2f} $"
+        except Exception as e:
+            texto_info = "No se pudo obtener el tipo de cambio.\n\nVerifica tu conexión a internet."
 
         while True:
             self.pantalla.fill(self.FONDO_GRIS)
@@ -181,12 +214,12 @@ class Interfaz:
             titulo_render = fuente_titulo.render("Premios (en dólares)", True, self.BLANCO)
             self.pantalla.blit(titulo_render, (self.ANCHO // 2 - titulo_render.get_width() // 2, 100))
 
-            # Texto multilinea centrado
-            y_offset = 180
+            # Mostrar tipo de cambio o error
+            y_offset = 200
             for linea in texto_info.split('\n'):
                 linea_render = fuente_texto.render(linea, True, self.BLANCO)
                 self.pantalla.blit(linea_render, (self.ANCHO // 2 - linea_render.get_width() // 2, y_offset))
-                y_offset += linea_render.get_height() + 8
+                y_offset += linea_render.get_height() + 10
 
             # Botón Volver
             boton_volver.dibujar(self.pantalla)
@@ -196,10 +229,11 @@ class Interfaz:
                 if evento.type == pygame.QUIT:
                     self.salir()
                 boton_volver.manejar_evento(evento)
-            
+
             self.VerificarCursor()
             pygame.display.flip()
             self.reloj.tick(self.FPS)
+
 
 
     def como_jugar(self):
