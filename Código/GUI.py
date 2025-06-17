@@ -1,14 +1,20 @@
 import pygame
 import sys
 import os
+import json
 from Botones import Boton
 from Guardar import Guardar
 import tkinter as tk
 from tkinter import messagebox
 from Reconfacial import ReconFacial
+from SesionUsuario import SesionUsuario
+from PremiosFaciales import PremiosFaciales
+from PremiosClave import PremiosClave
 import threading
 from JuegoPatrones import JuegoPatrones
+from ModoMultijugador import ModoMultijugador
 from Sonido import Sonido
+from TipoCambioBCCR import TipoCambioBCCR
 import time
 
 sonido = Sonido()
@@ -46,6 +52,8 @@ class Interfaz:
         self.fuente_grande = pygame.font.SysFont('Segoe UI', 48, bold=True)  # o el tamaño que necesites
         self.fuente_pequena = pygame.font.SysFont('Segoe UI', 24)
         self.botones_visibles = []
+        self.animando_patron = False  # Desactiva hover visual durante animación
+        self.sesion = SesionUsuario()
         ruta_fondo = os.path.join('assets', 'fondo.jpg')
         if os.path.exists(ruta_fondo):
             self.fondo = pygame.image.load(ruta_fondo)
@@ -86,7 +94,7 @@ class Interfaz:
         self.botones_visibles.clear()
 
         boton_unjugador = Boton("Un Jugador", self.ANCHO // 3 - 150, self.ALTO // 2 - 50, 320, 100, self.tablero_unjugador, self.fuente_grande, interfaz=self)
-        boton_multijugador = Boton("Multijugador", 2 * self.ANCHO // 3 - 150, self.ALTO // 2 - 50, 320, 100, self.tablero_multijugador, self.fuente_grande, interfaz=self)
+        boton_multijugador = Boton("Multijugador", 2 * self.ANCHO // 3 - 150, self.ALTO // 2 - 50, 320, 100, self.pantalla_nombres_multijugador, self.fuente_grande, interfaz=self)
         boton_volver = Boton("Volver", 20, self.ALTO - 70, 100, 50, self.ir_a_menu, pygame.font.SysFont('Segoe UI', 30, bold=True), interfaz=self)
 
         fuente_titulo = pygame.font.SysFont('Segoe UI', 36, True)
@@ -123,37 +131,60 @@ class Interfaz:
         self.botones_visibles.clear()
         boton_volver = Boton("Volver", self.ANCHO // 2 - 150, self.ALTO - 100, 300, 60, self.pantalla_menu_principal, self.fuente, interfaz=self)
 
-        texto = (
-            "Desarrollado por:\n"
-            "Dylan\n"
-            "Windell\n\n"
-            "Juego\n"
-            "Proyecto"
-        )
-
-        fuente_titulo = pygame.font.SysFont('Segoe UI', 36, True)
+        # Fuentes para cada parte
+        fuente_titulo = pygame.font.SysFont('Segoe UI', 40, True)
+        fuente_subtitulo = pygame.font.SysFont('Segoe UI', 32, True)
+        fuente_juego = pygame.font.SysFont('Segoe UI', 28, True)
         fuente_texto = pygame.font.SysFont('Segoe UI', 24)
+
+        # Cargar imágenes con nueva ruta
+        try:
+            imagen_messi = pygame.image.load(os.path.join("assets", "Imágenes", "jugadores", "messi.png"))
+            imagen_cristiano = pygame.image.load(os.path.join("assets", "Imágenes", "jugadores", "cristiano.png"))
+
+            imagen_messi = pygame.transform.scale(imagen_messi, (200, 200))
+            imagen_cristiano = pygame.transform.scale(imagen_cristiano, (200, 200))
+        except Exception as e:
+            print("Error cargando imágenes:", e)
+            imagen_messi = None
+            imagen_cristiano = None
 
         while True:
             self.pantalla.fill(self.FONDO_GRIS)
             if self.fondo:
                 self.pantalla.blit(self.fondo, (0, 0))
 
+            y = 80
+
             # Título
-            titulo_render = fuente_titulo.render("About", True, self.BLANCO)
-            self.pantalla.blit(titulo_render, (self.ANCHO // 2 - titulo_render.get_width() // 2, 100))
+            titulo_render = fuente_titulo.render("Instituto Tecnológico de Costa Rica", True, self.BLANCO)
+            self.pantalla.blit(titulo_render, (self.ANCHO // 2 - titulo_render.get_width() // 2, y))
+            y += titulo_render.get_height() + 20
 
-            # Texto multilinea centrado
-            y_offset = 180
-            for linea in texto.split('\n'):
-                linea_render = fuente_texto.render(linea, True, self.BLANCO)
-                self.pantalla.blit(linea_render, (self.ANCHO // 2 - linea_render.get_width() // 2, y_offset))
-                y_offset += linea_render.get_height() + 8
+            # Subtítulo
+            subtitulo_render = fuente_subtitulo.render("Ingeniería en Computadores", True, self.BLANCO)
+            self.pantalla.blit(subtitulo_render, (self.ANCHO // 2 - subtitulo_render.get_width() // 2, y))
+            y += subtitulo_render.get_height() + 20
 
-            # Botón Volver
+            # Nombre del juego
+            juego_render = fuente_juego.render("Memory Game", True, self.BLANCO)
+            self.pantalla.blit(juego_render, (self.ANCHO // 2 - juego_render.get_width() // 2, y))
+            y += juego_render.get_height() + 40
+
+            # Créditos
+            creditos_render = fuente_texto.render("Desarrollado por Windell Loria y Dylan Bonilla", True, self.BLANCO)
+            self.pantalla.blit(creditos_render, (self.ANCHO // 2 - creditos_render.get_width() // 2, y))
+
+            # Imágenes de jugadores
+            if imagen_messi:
+                self.pantalla.blit(imagen_messi, (80, 150))  # Izquierda
+            if imagen_cristiano:
+                self.pantalla.blit(imagen_cristiano, (self.ANCHO - 280, 150))  # Derecha
+
+            # Botón volver
             boton_volver.dibujar(self.pantalla)
 
-            # Manejo de eventos
+            # Eventos
             for evento in pygame.event.get():
                 if evento.type == pygame.QUIT:
                     self.salir()
@@ -170,7 +201,14 @@ class Interfaz:
         fuente_titulo = pygame.font.SysFont('Segoe UI', 36, True)
         fuente_texto = pygame.font.SysFont('Segoe UI', 24)
 
-        texto_info = "Premios (en dólares)\n\nAquí va la info de la API BCCR..."
+        # Obtener tipo de cambio desde la API
+        try:
+            bccr = TipoCambioBCCR("d.bonilla.3@estudiantec.cr", "5B3R6MS2OE")
+            compra = bccr.obtener_compra()
+            venta = bccr.obtener_venta()
+            texto_info = f"Tipo de cambio:\n\nCompra: {compra:.2f} $\nVenta: {venta:.2f} $"
+        except Exception as e:
+            texto_info = "No se pudo obtener el tipo de cambio.\n\nVerifica tu conexión a internet."
 
         while True:
             self.pantalla.fill(self.FONDO_GRIS)
@@ -181,12 +219,12 @@ class Interfaz:
             titulo_render = fuente_titulo.render("Premios (en dólares)", True, self.BLANCO)
             self.pantalla.blit(titulo_render, (self.ANCHO // 2 - titulo_render.get_width() // 2, 100))
 
-            # Texto multilinea centrado
-            y_offset = 180
+            # Mostrar tipo de cambio o error
+            y_offset = 200
             for linea in texto_info.split('\n'):
                 linea_render = fuente_texto.render(linea, True, self.BLANCO)
                 self.pantalla.blit(linea_render, (self.ANCHO // 2 - linea_render.get_width() // 2, y_offset))
-                y_offset += linea_render.get_height() + 8
+                y_offset += linea_render.get_height() + 10
 
             # Botón Volver
             boton_volver.dibujar(self.pantalla)
@@ -196,11 +234,10 @@ class Interfaz:
                 if evento.type == pygame.QUIT:
                     self.salir()
                 boton_volver.manejar_evento(evento)
-            
+
             self.VerificarCursor()
             pygame.display.flip()
             self.reloj.tick(self.FPS)
-
 
     def como_jugar(self):
         self.botones_visibles.clear()
@@ -374,8 +411,6 @@ class Interfaz:
             pygame.display.flip()
             self.reloj.tick(self.FPS)
 
-
-
     def modo_clasico_window(self):
         self.botones_visibles.clear()
         # Cargar imágenes con pygame
@@ -419,7 +454,6 @@ class Interfaz:
                 y_texto += txt_render.get_height() + 5
 
             # Mostrar imágenes y símbolos debajo del texto
-
         
             x_correcto = self.ANCHO // 2 - 500
             y_imagenes = y_texto + 20
@@ -527,10 +561,15 @@ class Interfaz:
 
     def tablero_unjugador(self):
         self.botones_visibles.clear()
+
+        if self.sesion.esta_autenticado():
+            print("Jugador:", self.sesion.nombre)
+            print("Método:", self.sesion.metodo)
+        
         btn_pausa = Boton("Pausa", self.ANCHO - 150, 20, 140, 50, self.pausa_unjugador, self.fuente_grande, bg_color=(0, 139, 139), fg_color="black", interfaz=self)
         BtnReiniciar = Boton("Reiniciar", self.ANCHO // 2 - 100, 680, 195, 50, self.ReiniciarUnJugador, self.fuente_grande, bg_color=(0, 139, 139), fg_color="black", interfaz=self)
         fuente_titulo = pygame.font.SysFont('Segoe UI', 30, True)
-        texto_titulo = "Modo Un Jugador - Tablero 6x6"
+        texto_titulo = "Modo Un Jugador"
 
         # Crear la matriz de botones
         self.botones_unjugador = []
@@ -553,14 +592,14 @@ class Interfaz:
             self.botones_unjugador.append(fila_botones)
 
         # ---------- Animación de patrón ----------
-        self.LogicaPatrones.GenerarPatron()
+        self.LogicaPatrones.LongitudPatron= 3
+        self.LogicaPatrones.GenerarPatronInicial()
         patron = self.LogicaPatrones.ObtenerPatron()
 
         # Desactivar botones durante animación
         for fila_botones in self.botones_unjugador:
             for btn in fila_botones:
                 btn.disabled = True
-
         for (fila, col) in patron:
             boton = self.botones_unjugador[fila][col]
             boton.color_normal = pygame.Color("yellow")
@@ -569,7 +608,6 @@ class Interfaz:
             boton.color_normal = pygame.Color("gray20")
             self.ActualizarPantalla()
             pygame.time.delay(200)
-
         # Activar botones y lógica
         for fila_botones in self.botones_unjugador:
             for btn in fila_botones:
@@ -630,13 +668,23 @@ class Interfaz:
                                     boton.color_normal = pygame.Color("red")
                                 elif resultado == 'completado':
                                     print("✅ ¡Patrón completado! Nuevo nivel...")
-                                    boton.color_normal = pygame.Color("blue")
-                                    pygame.display.flip()
-                                    pygame.time.delay(800)
 
+                                    boton.color_normal = pygame.Color("blue")
+                                    pygame.time.delay(300)
+                                    # 🔄 Limpiar el color del botón seleccionado antes de animar
+                                    boton.color_normal = pygame.Color("gray20")
+                                    self.ActualizarPantalla()
+                                    pygame.time.delay(100)
+
+                                    #Si llegó al final (36 casillas), gana $100
+                                    if self.LogicaPatrones.LongitudPatron == 36:
+                                        self.GaneUnJugador(monto=100)
+                                        return  # Detener todo ANTES de generar nuevo patrón
+                                    
                                     # Aumentar dificultad
                                     self.LogicaPatrones.LongitudPatron += 1
-                                    self.LogicaPatrones.GenerarPatron()
+
+                                    self.LogicaPatrones.AgregarACasilla()
                                     patron = self.LogicaPatrones.ObtenerPatron()
 
                                     # Desactivar botones y limpiar colores
@@ -644,8 +692,10 @@ class Interfaz:
                                         for btn in fila_botones:
                                             btn.color_normal = pygame.Color("gray20")
                                             btn.disabled = True
+                                            btn.hovered = False
                                     self.ActualizarPantalla()
                                     pygame.time.delay(500)
+                                    self.animando_patron = True  # Desactiva hover visual durante animación
 
                                     # Mostrar el nuevo patrón
                                     for (fila, col) in patron:
@@ -656,6 +706,7 @@ class Interfaz:
                                         boton.color_normal = pygame.Color("gray20")
                                         self.ActualizarPantalla()
                                         pygame.time.delay(200)
+                                    self.animando_patron = False  # Desactiva hover visual durante animación
 
                                     # Reactivar lógica
                                     for fila_botones in self.botones_unjugador:
@@ -665,40 +716,50 @@ class Interfaz:
                                     self.LogicaPatrones.IniciarTemporizador()
                                 elif resultado in ('incorrecto', 'muy_lento', 'tiempo_agotado'):
                                     print("❌ Fallaste. Reintentando el mismo nivel...")
-                                    pygame.time.delay(800)
-
-                                    # Repetir con la misma dificultad
-                                    self.LogicaPatrones.GenerarPatron()
-                                    patron = self.LogicaPatrones.ObtenerPatron()
-
-                                    # Limpiar tablero y desactivar botones
-                                    for fila_botones in self.botones_unjugador:
-                                        for btn in fila_botones:
-                                            btn.color_normal = pygame.Color("gray20")
-                                            btn.disabled = True
-                                    self.ActualizarPantalla()
-                                    pygame.time.delay(500)
-
-                                    # Animación del patrón
-                                    for (fila, col) in patron:
-                                        boton = self.botones_unjugador[fila][col]
-                                        boton.color_normal = pygame.Color("yellow")
-                                        self.ActualizarPantalla()
-                                        pygame.time.delay(500)
-                                        boton.color_normal = pygame.Color("gray20")
-                                        self.ActualizarPantalla()
-                                        pygame.time.delay(200)
-
-                                    # Reactivar lógica y botones
-                                    for fila_botones in self.botones_unjugador:
-                                        for btn in fila_botones:
-                                            btn.disabled = False
-                                    self.LogicaPatrones.IniciarVerificacion()
-                                    self.LogicaPatrones.IniciarTemporizador()
+                                    self.ReiniciarUnJugador
+                                    return
             self.VerificarCursor()
             pygame.display.flip()
             self.reloj.tick(self.FPS)
+    
+    def GaneUnJugador(self, monto=100):
+        """
+        Muestra una animación de victoria y guarda el premio si el usuario está autenticado.
+        """
+        self.botones_visibles.clear()
 
+        # Guardar premio si hay sesión activa
+        if self.sesion.esta_autenticado():
+            nombre = self.sesion.nombre
+            metodo = self.sesion.metodo
+            if metodo == "clave":
+                try:
+                    PremiosClave.otorgar_premio(nombre, monto)
+                except Exception as e:
+                    print(f"Error al guardar premio por clave: {e}")
+            elif metodo == "facial":
+                try:
+                    PremiosFaciales.otorgar_premio(nombre, monto)
+                except Exception as e:
+                    print(f"Error al guardar premio facial: {e}")
+
+        # 🎉 Mostrar pantalla de gane
+        texto_titulo = self.fuente_titulo.render("¡GANASTE!", True, (255, 215, 0))
+        texto_dinero = self.fuente.render(f"Obtuviste ${monto}", True, (255, 255, 255))
+
+        fondo_temporal = pygame.Surface((self.ANCHO, self.ALTO))
+        fondo_temporal.set_alpha(200)
+        fondo_temporal.fill((0, 0, 0))
+
+        tiempo_inicio = time.time()
+
+        while time.time() - tiempo_inicio < 4:
+            self.pantalla.blit(fondo_temporal, (0, 0))
+            self.pantalla.blit(texto_titulo, (self.ANCHO // 2 - texto_titulo.get_width() // 2, self.ALTO // 2 - 80))
+            self.pantalla.blit(texto_dinero, (self.ANCHO // 2 - texto_dinero.get_width() // 2, self.ALTO // 2))
+            pygame.display.flip()
+            self.reloj.tick(self.FPS)
+    
     def ActualizarPantalla(self):
         self.pantalla.fill(self.FONDO_GRIS)
         if self.fondo:
@@ -706,6 +767,21 @@ class Interfaz:
         for fila_botones in self.botones_unjugador:
             for b in fila_botones:
                 b.dibujar(self.pantalla)
+        pygame.display.flip()
+    
+    def ActualizaAmbosTableros(self):
+        self.pantalla.fill(self.FONDO_GRIS)
+        if self.fondo:
+            self.pantalla.blit(self.fondo, (0, 0))
+
+        for fila in self.botones_jugador1:
+            for boton in fila:
+                boton.dibujar(self.pantalla)
+
+        for fila in self.botones_jugador2:
+            for boton in fila:
+                boton.dibujar(self.pantalla)
+
         pygame.display.flip()
 
     def pausa_unjugador(self):
@@ -767,9 +843,87 @@ class Interfaz:
     def ReiniciarUnJugador(self):
         self.LogicaPatrones.ReiniciarTodo()
         self.tablero_unjugador()
-
-    def tablero_multijugador(self):
+        self.GaneUnJugador() #Quitar si no funciona
+    
+    def pantalla_nombres_multijugador(self):
         self.botones_visibles.clear()
+
+        entrada_j1 = ""
+        entrada_j2 = ""
+
+        input_rect_j1 = pygame.Rect(self.ANCHO // 2 - 200, 200, 400, 60)
+        input_rect_j2 = pygame.Rect(self.ANCHO // 2 - 200, 300, 400, 60)
+
+        boton_iniciar = Boton("Iniciar Juego", self.ANCHO // 2 - 150, 400, 300, 60, None, self.fuente, interfaz=self)
+        boton_volver = Boton("Volver", self.ANCHO // 2 - 150, 480, 300, 60, self.jugar, self.fuente, interfaz=self)
+
+        activo_j1 = True
+        activo_j2 = False
+
+        while True:
+            self.pantalla.fill(self.FONDO_GRIS)
+            if self.fondo:
+                self.pantalla.blit(self.fondo, (0, 0))
+
+            titulo = self.fuente_titulo.render("Nombres de Jugadores", True, self.BLANCO)
+            self.pantalla.blit(titulo, (self.ANCHO // 2 - titulo.get_width() // 2, 100))
+
+            pygame.draw.rect(self.pantalla, pygame.Color("white") if activo_j1 else pygame.Color("gray"), input_rect_j1, 2)
+            pygame.draw.rect(self.pantalla, pygame.Color("white") if activo_j2 else pygame.Color("gray"), input_rect_j2, 2)
+
+            # Etiquetas
+            label_j1 = self.fuente_pequena.render("Jugador 1", True, self.BLANCO)
+            label_j2 = self.fuente_pequena.render("Jugador 2", True, self.BLANCO)
+
+            self.pantalla.blit(label_j1, (input_rect_j1.x, input_rect_j1.y - 30))
+            self.pantalla.blit(label_j2, (input_rect_j2.x, input_rect_j2.y - 30))
+
+            # Texto dentro del campo
+            texto_j1 = self.fuente_pequena.render(entrada_j1, True, self.BLANCO)
+            texto_j2 = self.fuente_pequena.render(entrada_j2, True, self.BLANCO)
+
+            self.pantalla.blit(texto_j1, (input_rect_j1.x + 10, input_rect_j1.y + 15))
+            self.pantalla.blit(texto_j2, (input_rect_j2.x + 10, input_rect_j2.y + 15))
+
+            boton_iniciar.dibujar(self.pantalla)
+            boton_volver.dibujar(self.pantalla)
+
+            for evento in pygame.event.get():
+                if evento.type == pygame.QUIT:
+                    self.salir()
+                elif evento.type == pygame.MOUSEBUTTONDOWN:
+                    if input_rect_j1.collidepoint(evento.pos):
+                        activo_j1 = True
+                        activo_j2 = False
+                    elif input_rect_j2.collidepoint(evento.pos):
+                        activo_j2 = True
+                        activo_j1 = False
+
+                    if entrada_j1.strip() and entrada_j2.strip():
+                        self.tablero_multijugador(entrada_j1.strip(), entrada_j2.strip())
+                        return
+                    boton_volver.manejar_evento(evento)
+
+
+                elif evento.type == pygame.KEYDOWN:
+                    if activo_j1:
+                        if evento.key == pygame.K_BACKSPACE:
+                            entrada_j1 = entrada_j1[:-1]
+                        else:
+                            entrada_j1 += evento.unicode
+                    elif activo_j2:
+                        if evento.key == pygame.K_BACKSPACE:
+                            entrada_j2 = entrada_j2[:-1]
+                        else:
+                            entrada_j2 += evento.unicode
+
+            self.VerificarCursor()
+            pygame.display.flip()
+            self.reloj.tick(self.FPS)
+
+    def tablero_multijugador(self, nombre_j1="Jugador 1", nombre_j2="Jugador 2"):
+        self.botones_visibles.clear()
+        
         # Crear botón de pausa
         btn_pausa = Boton(
             "Pausa", 
@@ -783,7 +937,7 @@ class Interfaz:
 
         # Título
         fuente_titulo = pygame.font.SysFont('Segoe UI', 30, True)
-        texto_titulo = "Modo Multijugador - Tableros 6x6"
+        texto_titulo = "Modo Multijugador"
 
         # Parámetros del tablero
         ancho_btn = 80
@@ -795,9 +949,7 @@ class Interfaz:
         tablero_alto = filas * alto_btn + (filas - 1) * separacion
 
         # Posiciones para los dos tableros
-        # Tablero 1 a la izquierda
         start_x_1 = self.ANCHO // 4 - tablero_ancho // 2
-        # Tablero 2 a la derecha
         start_x_2 = 3 * self.ANCHO // 4 - tablero_ancho // 2
         start_y = 120
 
@@ -828,6 +980,35 @@ class Interfaz:
                 btn.disabled = True
                 fila_botones.append(btn)
             self.botones_jugador2.append(fila_botones)
+        
+        self.ModoJuego = ModoMultijugador(ModoMultijugador.CargarImagenes(), self.botones_jugador1, self.botones_jugador2)
+
+        # --- Mostrar las imágenes de ambos tableros por 3 segundos ---
+        for fila in range(6):
+            for col in range(6):
+                # Mostrar en tablero del jugador 1
+                img1 = self.ModoJuego.TableroJugador1[fila][col]
+                self.botones_jugador1[fila][col].imagen = img1
+                self.botones_jugador1[fila][col].disabled = True
+
+                # Mostrar en tablero del jugador 2
+                img2 = self.ModoJuego.TableroJugador2[fila][col]
+                self.botones_jugador2[fila][col].imagen = img2
+                self.botones_jugador2[fila][col].disabled = True
+
+        # Dibujar tableros con imágenes visibles
+        self.ActualizaAmbosTableros()
+        pygame.time.delay(3000)  # Mostrar por 3 segundos
+
+        # --- Ocultar todas las imágenes ---
+        for fila in range(6):
+            for col in range(6):
+                self.botones_jugador1[fila][col].imagen = None
+                self.botones_jugador1[fila][col].disabled = False
+
+                self.botones_jugador2[fila][col].imagen = None
+                self.botones_jugador2[fila][col].disabled = False
+        self.ActualizaAmbosTableros()
 
         # Loop principal
         while True:
@@ -838,6 +1019,15 @@ class Interfaz:
             # Dibujar título centrado arriba
             titulo_render = fuente_titulo.render(texto_titulo, True, self.BLANCO)
             self.pantalla.blit(titulo_render, (self.ANCHO // 2 - titulo_render.get_width() // 2, 30))
+
+            nombre_j1_render = self.fuente.render(nombre_j1, True, self.BLANCO)
+            nombre_j2_render = self.fuente.render(nombre_j2, True, self.BLANCO)
+
+            x_j1 = start_x_1 + (tablero_ancho // 2) - (nombre_j1_render.get_width() // 2)
+            x_j2 = start_x_2 + (tablero_ancho // 2) - (nombre_j2_render.get_width() // 2)
+
+            self.pantalla.blit(nombre_j1_render, (x_j1, start_y - 50))
+            self.pantalla.blit(nombre_j2_render, (x_j2, start_y - 50))
 
             # Dibujar línea divisoria en el centro
             linea_x = self.ANCHO // 2
@@ -856,16 +1046,62 @@ class Interfaz:
                 for btn in fila_botones:
                     btn.dibujar(self.pantalla)
 
-            # Eventos
             for evento in pygame.event.get():
                 if evento.type == pygame.QUIT:
                     self.salir()
-                btn_pausa.manejar_evento(evento)
-                # Puedes agregar manejo de eventos para botones si los habilitas más adelante
 
-            self.VerificarCursor()
-            pygame.display.flip()
-            self.reloj.tick(self.FPS)
+                btn_pausa.manejar_evento(evento)
+
+                if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
+                    # Determinar jugador actual
+                    jugador_actual = self.ModoJuego.TurnoActual
+
+                    # Detectar cuál botón fue presionado
+                    botones = self.botones_jugador1 if jugador_actual == 1 else self.botones_jugador2
+                    for fila in range(6):
+                        for col in range(6):
+                            boton = botones[fila][col]
+                            if boton.rect.collidepoint(evento.pos) and not boton.disabled:
+                                imagen = self.ModoJuego.TableroJugador1[fila][col] if jugador_actual == 1 else self.ModoJuego.TableroJugador2[fila][col]
+                                boton.imagen = imagen
+                                boton.disabled = True  # Bloquear durante evaluación
+
+                                resultado = self.ModoJuego.SeleccionarCasilla(jugador_actual, fila, col)
+
+                                if resultado == "esperando":
+                                    pass  # Aún falta la segunda carta
+                                elif resultado == "acierto":
+                                    self.ModoJuego.ReiniciarTiempo(bonificacion=7)
+                                elif resultado == "fallo":
+                                    pygame.time.delay(800)  # Esperar antes de ocultar
+                                    for f, c in self.ModoJuego.CartasSeleccionadas:
+                                        self.botones_jugador1[f][c].imagen = None if jugador_actual == 1 else self.botones_jugador1[f][c].imagen
+                                        self.botones_jugador2[f][c].imagen = None if jugador_actual == 2 else self.botones_jugador2[f][c].imagen
+                                        self.botones_jugador1[f][c].disabled = False if jugador_actual == 1 else self.botones_jugador1[f][c].disabled
+                                        self.botones_jugador2[f][c].disabled = False if jugador_actual == 2 else self.botones_jugador2[f][c].disabled
+
+                                    self.ModoJuego.CartasSeleccionadas.clear()
+                self.VerificarCursor()
+                pygame.display.flip()
+                self.reloj.tick(self.FPS)
+
+    def OtorgarParticipacion(self, monto=5):
+        """
+        Otorga premio de participación al usuario autenticado en el modo multijugador.
+        """
+        if self.sesion.esta_autenticado():
+            nombre = self.sesion.nombre
+            metodo = self.sesion.metodo
+            if metodo == "clave":
+                try:
+                    PremiosClave.otorgar_premio(nombre, monto)
+                except Exception as e:
+                    print(f"Error al guardar premio por clave: {e}")
+            elif metodo == "facial":
+                try:
+                    PremiosFaciales.otorgar_premio(nombre, monto)
+                except Exception as e:
+                    print(f"Error al guardar premio facial: {e}")
 
     def pausa_multijugador(self):
         self.botones_visibles.clear()
@@ -894,12 +1130,11 @@ class Interfaz:
         boton_continuar.color_normal = self.CYAN_OSCURO
         boton_continuar.fg_color = pygame.Color("black")
 
-        ejecutando = True
-        while ejecutando:
+        while True:
             self.pantalla.fill(self.FONDO_GRIS)
             if self.fondo:
                 self.pantalla.blit(self.fondo, (0, 0))
-
+        
             # Texto central
             texto = self.fuente_titulo.render("Juego en Pausa", True, self.BLANCO)
             self.pantalla.blit(texto, (self.ANCHO // 2 - texto.get_width() // 2, self.ALTO // 2 - 150))
@@ -914,7 +1149,7 @@ class Interfaz:
                 elif boton_salir.manejar_evento(evento):
                     return  # Sale al menú principal
                 elif boton_continuar.manejar_evento(evento):
-                    ejecutando = False  # Aquí termina el bucle y reanuda el juego
+                    return False  # Aquí termina el bucle y reanuda el juego
 
             self.VerificarCursor()
             pygame.display.flip()
@@ -923,7 +1158,6 @@ class Interfaz:
     # --- PANTALLAS ---
 
     def pantalla_inicio(self):
-
 
         self.botones_visibles.clear()
         botones = [
@@ -1157,6 +1391,7 @@ class Interfaz:
                     if boton_aceptar.rect.collidepoint(evento.pos):
                         if texto_usuario.strip() != "" and texto_clave.strip() != "":
                             if guardar.verificar_credenciales(texto_usuario.strip(), texto_clave.strip()):
+                                self.sesion.iniciar_sesion(texto_usuario.strip(), "clave")
                                 messagebox.showinfo("Bienvenido", "Inicio de sesión exitoso.")
                                 self.ir_a_menu()  # o lo que corresponda
                             else:
@@ -1179,7 +1414,6 @@ class Interfaz:
             self.VerificarCursor()
             pygame.display.flip()
             self.reloj.tick(self.FPS)
-
 
     def pantalla_menu_principal(self):
         sonido.reproducir_musica()

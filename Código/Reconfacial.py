@@ -136,6 +136,7 @@ class ReconFacial:
                     if recognized and name:
                         cv2.imshow("Login con rostro", frame)
                         cv2.waitKey(1000)
+                        self.interfaz.sesion.iniciar_sesion(name, "facial")
                         self.mensaje(f"¡Bienvenido, {name}!")
                         cap.release()
                         cv2.destroyAllWindows()
@@ -240,4 +241,3 @@ class ReconFacial:
             self.interfaz.VerificarCursor()
             pygame.display.flip()
             reloj.tick(30)
-            

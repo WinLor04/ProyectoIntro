@@ -17,12 +17,21 @@ class JuegoPatrones:
         self.TiempoTotalMax = 12  # segundos
         self.TiempoEntreCasillasMax = 2  # segundos
 
-    def GenerarPatron(self):
+    def GenerarPatronInicial(self):
         """
         Genera una secuencia aleatoria de casillas únicas del tablero.
         """
         self.Patron = random.sample(self.Tablero, self.LongitudPatron)
     
+    def AgregarACasilla(self):
+        """
+        Agrega una casilla nueva sin repetir, para aumentar dificultad.
+        """
+        disponibles = [pos for pos in self.Tablero if pos not in self.Patron]
+        if disponibles:
+            nueva = random.choice(disponibles)
+            self.Patron.append(nueva)
+
     def ObtenerPatron(self):
         """
         Devuelve el patrón actual que debe recordar el jugador.
