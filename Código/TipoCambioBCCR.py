@@ -2,6 +2,9 @@ import requests
 from datetime import datetime
 import xml.etree.ElementTree as ET
 
+"""
+Clase para la lógica del API
+"""
 class TipoCambioBCCR:
     def __init__(self, correo: str, token: str):
         self.correo = correo

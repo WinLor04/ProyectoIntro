@@ -1,7 +1,6 @@
 import pygame
 import sys
 import os
-import json
 from Botones import Boton
 from Guardar import Guardar
 import tkinter as tk
@@ -10,7 +9,6 @@ from Reconfacial import ReconFacial
 from SesionUsuario import SesionUsuario
 from PremiosFaciales import PremiosFaciales
 from PremiosClave import PremiosClave
-import threading
 from JuegoPatrones import JuegoPatrones
 from ModoMultijugador import ModoMultijugador
 from Sonido import Sonido
@@ -24,6 +22,10 @@ root = tk.Tk()
 root.withdraw()
 sonido.reproducir_musica()
 sonido.detener_musica()
+
+"""
+Esta es una clase para el manejo de la interfaz del juego de Memory Game
+"""
 
 class Interfaz:
     FONDO_GRIS = (52, 52, 52)
@@ -172,7 +174,6 @@ class Interfaz:
             self.pantalla.fill(self.FONDO_GRIS)
             if self.fondo:
                 self.pantalla.blit(self.fondo, (0, 0))
-
             y = 80
 
             # Título
@@ -190,7 +191,7 @@ class Interfaz:
             self.pantalla.blit(juego_render, (self.ANCHO // 2 - juego_render.get_width() // 2, y))
             y += juego_render.get_height() + 40
 
-            # Créditos
+            # Desarrolladores
             creditos_render = fuente_texto.render("Desarrollado por Windell Loria y Dylan Bonilla", True, self.BLANCO)
             self.pantalla.blit(creditos_render, (self.ANCHO // 2 - creditos_render.get_width() // 2, y))
 
@@ -212,8 +213,6 @@ class Interfaz:
             self.VerificarCursor()
             pygame.display.flip()
             self.reloj.tick(self.FPS)
-
-
 
     def premios(self):
         """
@@ -330,21 +329,15 @@ class Interfaz:
             pygame.display.flip()
             self.reloj.tick(self.FPS)
 
-
     def ajustes(self):
         """
         Muestra la pantalla de ajustes donde el usuario puede seleccionar música, ajustar volumen y activar/desactivar mute.
         """
         self.botones_visibles.clear()
 
-        btn_volver = Boton("Volver", self.ANCHO // 2 - 150, self.ALTO - 100, 300, 60,
-                        self.pantalla_menu_principal, self.fuente, interfaz=self)
+        btn_volver = Boton("Volver", self.ANCHO // 2 - 150, self.ALTO - 100, 300, 60, self.pantalla_menu_principal, self.fuente, interfaz=self)
 
-        canciones = [
-            ("HeatWaves", "HeatWaves.mp3"),
-            ("Feet", "Feet.mp3"),
-            ("TheNights", "TheNights.mp3")
-        ]
+        canciones = [("HeatWaves", "HeatWaves.mp3"), ("Feet", "Feet.mp3"), ("TheNights", "TheNights.mp3")]
         cancion_seleccionada = 0
         mute = False
         volumen = 0.3
@@ -355,7 +348,7 @@ class Interfaz:
         slider_height = 30
         slider_knob_radius = 18
 
-        # Reproduce canción inicial (usa tu instancia de Sonido, por ejemplo self.sonido)
+        # Reproduce canción inicial
         self.sonido.reproducir_cancion(canciones[cancion_seleccionada][1], volumen, mute)
 
         centro_x = self.ANCHO // 2
@@ -430,6 +423,7 @@ class Interfaz:
             btn_volver.dibujar(self.pantalla)
 
             # Dibujar casillas canciones (radio buttons)
+            #enumerate() es una función de Python que agrega un índice a los elementos de un iterable.
             for i, (nombre, _) in enumerate(canciones):
                 x = centro_x - 150
                 y = start_y + i * espacio_y
@@ -532,7 +526,6 @@ class Interfaz:
 
             check_verde = self.fuente_titulo.render("SI", True, (0, 255, 0))
             self.pantalla.blit(check_verde, (x_correcto + 320, y_imagenes + 40))  # desplazamiento un poco mayor
-
           
             x_incorrecto = self.ANCHO // 2 + 100
 
@@ -541,7 +534,6 @@ class Interfaz:
 
             cruz_roja = self.fuente_titulo.render("NO", True, (255, 0, 0))
             self.pantalla.blit(cruz_roja, (x_incorrecto + 320, y_imagenes + 40))
-
 
             # Botón volver
             for evento in pygame.event.get():
@@ -565,8 +557,6 @@ class Interfaz:
         # Cargar imágenes con pygame
         path_base = os.path.join('assets', "Imágenes", "jugadores")
       
-   
-
         texto = (
             "En este modo unijugador, el objetivo es memorizar un patrón .\n"
             "El patrón consiste en una secuencia botones amarillos.\n"
@@ -1140,8 +1130,8 @@ class Interfaz:
             if delay_fallo_activo:
                 if time.time() - delay_fallo_inicio >= delay_fallo_duracion:
                     # Ya pasó el delay, ocultar cartas fallidas
-                    jugador_actual = self.ModoJuego.TurnoActual
-                    botones_actuales = self.botones_jugador1 if jugador_actual == 1 else self.botones_jugador2
+                    TurnoActual = self.ModoJuego.TurnoActual
+                    botones_actuales = self.botones_jugador1 if TurnoActual == 1 else self.botones_jugador2
                     for f, c in self.ModoJuego.CartasSeleccionadas:
                         botones_actuales[f][c].imagen = None
                         botones_actuales[f][c].disabled = False
@@ -1149,7 +1139,7 @@ class Interfaz:
                     self.ModoJuego.CartasSeleccionadas.clear()
 
                     # Cambiar turno tras fallo
-                    self.ModoJuego.TurnoActual = 2 if jugador_actual == 1 else 1
+                    self.ModoJuego.TurnoActual = 2 if TurnoActual == 1 else 1
                     self.ModoJuego.ReiniciarTiempo()
 
                     delay_fallo_activo = False
@@ -1162,18 +1152,18 @@ class Interfaz:
                     btn_pausa.manejar_evento(evento)
 
                     if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
-                        jugador_actual = self.ModoJuego.TurnoActual
-                        botones = self.botones_jugador1 if jugador_actual == 1 else self.botones_jugador2
+                        TurnoActual = self.ModoJuego.TurnoActual
+                        botones = self.botones_jugador1 if TurnoActual == 1 else self.botones_jugador2
 
                         for fila in range(6):
                             for col in range(6):
                                 boton = botones[fila][col]
                                 if boton.rect.collidepoint(evento.pos) and not boton.disabled:
-                                    imagen = self.ModoJuego.TableroJugador1[fila][col] if jugador_actual == 1 else self.ModoJuego.TableroJugador2[fila][col]
+                                    imagen = self.ModoJuego.TableroJugador1[fila][col] if TurnoActual == 1 else self.ModoJuego.TableroJugador2[fila][col]
                                     boton.imagen = imagen
                                     boton.disabled = True
 
-                                    resultado = self.ModoJuego.SeleccionarCasilla(jugador_actual, fila, col)
+                                    resultado = self.ModoJuego.SeleccionarCasilla(TurnoActual, fila, col)
 
                                     if resultado == "esperando":
                                         pass
@@ -1184,26 +1174,29 @@ class Interfaz:
                                         self.sonido.reproducir_error()  # ❌ SONIDO DE FALLO
                                         delay_fallo_activo = True
                                         delay_fallo_inicio = time.time()
-
-
                     self.VerificarCursor()
 
             # Verificar tiempo agotado para cambio de turno, pero solo si no estamos en delay
             if not delay_fallo_activo and self.ModoJuego.TiempoAgotado():
+                # Ocultar y desbloquear las cartas seleccionadas del jugador que perdió el turno
+                botones_actuales = self.botones_jugador1 if self.ModoJuego.TurnoActual == 1 else self.botones_jugador2
+                for f, c in self.ModoJuego.CartasSeleccionadas:
+                    btn = botones_actuales[f][c]
+                    btn.imagen = None
+                    btn.disabled = False
+
+                self.ModoJuego.CartasSeleccionadas.clear()
                 # Cambiar turno
                 self.ModoJuego.TurnoActual = 2 if self.ModoJuego.TurnoActual == 1 else 1
-                self.ModoJuego.CartasSeleccionadas.clear()
                 self.ModoJuego.ReiniciarTiempo()
 
                 # Resetear imágenes seleccionadas que no son aciertos
-                botones_actuales = self.botones_jugador1 if self.ModoJuego.TurnoActual == 1 else self.botones_jugador2
                 for fila in range(6):
                     for col in range(6):
                         btn = botones_actuales[fila][col]
                         if btn.disabled and (fila, col) not in (self.ModoJuego.ParesEncontradosJ1 + self.ModoJuego.ParesEncontradosJ2):
                             btn.imagen = None
                             btn.disabled = False
-
 
             if len(self.ModoJuego.ParesEncontradosJ1) == 36 or len(self.ModoJuego.ParesEncontradosJ2) == 36:
                 if len(self.ModoJuego.ParesEncontradosJ1) > len(self.ModoJuego.ParesEncontradosJ2):
@@ -1216,11 +1209,8 @@ class Interfaz:
                 self.mostrar_ventana_ganador(mensaje_ganador)
                 return  # salir del loop para mostrar la ventana del ganador
 
-
-
             pygame.display.flip()
             self.reloj.tick(self.FPS)
-
 
     def OtorgarParticipacion(self, monto=5):
         """
@@ -1294,8 +1284,13 @@ class Interfaz:
             self.VerificarCursor()
             pygame.display.flip()
             self.reloj.tick(self.FPS)
+
     def mostrar_ventana_ganador(self, mensaje_ganador):
+        """
+        Muestra una pantalla de victoria.
+        """
         self.botones_visibles.clear()
+        self.OtorgarParticipacion()
 
         btn_volver = Boton(
             "Volver al Menú",
@@ -1330,7 +1325,6 @@ class Interfaz:
             self.VerificarCursor()
             pygame.display.flip()
             self.reloj.tick(self.FPS)
-
 
     def pantalla_inicio(self):
         """
@@ -1571,7 +1565,6 @@ class Interfaz:
             boton_volver.dibujar(self.pantalla)
             boton_reconocimiento.dibujar(self.pantalla)
 
-
             for evento in pygame.event.get():
                 if evento.type == pygame.QUIT:
                     self.salir()
@@ -1590,7 +1583,6 @@ class Interfaz:
                     boton_aceptar.manejar_evento(evento)
                     boton_volver.manejar_evento(evento)
                     boton_reconocimiento.manejar_evento(evento)
-
 
                     if boton_aceptar.rect.collidepoint(evento.pos):
                         if texto_usuario.strip() != "" and texto_clave.strip() != "":

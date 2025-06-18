@@ -1,5 +1,9 @@
 import pygame
 
+"""
+Clase para crear y gestionar botones interactivos en la interfaz del juego.
+Permite dibujar botones, detectar eventos de mouse y reproducir sonidos al interactuar.
+"""
 
 class Boton:
     sonido_global = None  # Sonido compartido entre todos los botones

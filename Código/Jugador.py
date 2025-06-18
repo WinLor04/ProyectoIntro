@@ -1,3 +1,7 @@
+"""
+Clase para el manejo de datos del jugador en el modo multijugador
+"""
+
 class Jugador:
     def __init__(self, nombre):
         """

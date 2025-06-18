@@ -3,11 +3,13 @@ import time
 import os
 import pygame
 
+"""
+Clase para integrar la lógica del modo de juego multijugador
+"""
+
 class ModoMultijugador:
     def __init__(self, Imagenes, botones_jugador1, botones_jugador2):
         """
-        Inicializa la lógica del modo multijugador.
-        
         :param Imagenes: Lista con 18 imágenes (pygame.Surface), usadas como pares.
         :param botones_jugador1: Botones del tablero del Jugador 1.
         :param botones_jugador2: Botones del tablero del Jugador 2.

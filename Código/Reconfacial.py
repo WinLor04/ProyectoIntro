@@ -8,6 +8,9 @@ from Botones import Boton
 from Guardar import Guardar
 USERS_DIR = "users_lbph"
 
+"""
+Clase para la lógica del reconocimiento facial
+"""
 class ReconFacial:
     def __init__(self, interfaz):
         self.interfaz = interfaz

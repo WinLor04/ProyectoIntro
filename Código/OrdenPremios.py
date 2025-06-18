@@ -2,6 +2,11 @@ import json
 from PremiosClave import PremiosClave
 from PremiosFaciales import PremiosFaciales
 
+"""
+Clase utilizada para la búsqueda de los puntajes más altos entre los archivos
+designados para método: clave o facial
+"""
+
 class OrdenPremios:
     @staticmethod
     def obtener_premios():

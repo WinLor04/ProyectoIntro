@@ -1,6 +1,11 @@
 import os
 import json
 
+"""
+Clase utilizada para la logica donde se guarda el puntaje del jugador
+sii inicio por el método: facial
+"""
+
 class PremiosFaciales:
     # Ruta del archivo que guarda los premios acumulados por usuario facial
     ARCHIVO = "premios_facial.json"

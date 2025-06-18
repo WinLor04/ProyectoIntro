@@ -1,11 +1,13 @@
 import random
 import time
 
+"""
+Clase que representa un juego de patrones en un tablero de casillas.
+Permite generar un patrón aleatorio de casillas y verificar si un patrón dado coincide con el generado.
+"""
+
 class JuegoPatrones:
-    """
-    Clase que representa un juego de patrones en un tablero de casillas.
-    Permite generar un patrón aleatorio de casillas y verificar si un patrón dado coincide con el generado.
-    """
+
     def __init__(self, Filas=6, Columnas=6):
         self.Filas = Filas
         self.Columnas = Columnas
@@ -56,7 +58,6 @@ class JuegoPatrones:
         tiempo_actual = time.time()
 
         # Verificar tiempo total
-                # Verificar tiempo total
         if self.TiempoInicio is not None and tiempo_actual - self.TiempoInicio > self.TiempoTotalMax:
             self.Resultado = False
             return 'tiempo_agotado'

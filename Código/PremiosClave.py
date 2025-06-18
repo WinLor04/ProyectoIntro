@@ -1,6 +1,11 @@
 import os
 import json
 
+"""
+Clase utilizada para la logica donde se guarda el puntaje del jugador
+sii inicio por el método: clave
+"""
+
 class PremiosClave:
     ARCHIVO = "premios_clave.json"  # Archivo donde se guardan los premios
 

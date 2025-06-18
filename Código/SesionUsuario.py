@@ -1,3 +1,7 @@
+"""
+Clase utilizada para verificar el método de inicio de sesión
+"""
+
 class SesionUsuario:
     def __init__(self):
         self.nombre = None
@@ -5,7 +9,7 @@ class SesionUsuario:
 
     def iniciar_sesion(self, nombre, metodo):
         """
-        Registra al usuario con su método de acceso.
+        Inicia al usuario con su método de acceso.
         """
         self.nombre = nombre
         self.metodo = metodo
