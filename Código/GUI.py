@@ -56,6 +56,12 @@ class Interfaz:
         self.botones_visibles = []
         self.animando_patron = False  # Desactiva hover visual durante animación
         self.sesion = SesionUsuario()
+        path_turno = os.path.join("assets", "Imágenes", "turno")
+        self.img_turno_on = pygame.image.load(os.path.join(path_turno, "turno.png")).convert_alpha()
+        self.img_turno_off = pygame.image.load(os.path.join(path_turno, "turno_off.png")).convert_alpha()
+        self.img_turno_on = pygame.transform.scale(self.img_turno_on, (75, 65))
+        self.img_turno_off = pygame.transform.scale(self.img_turno_off, (75, 65))
+
         ruta_fondo = os.path.join('assets', 'fondo.jpg')
         if os.path.exists(ruta_fondo):
             self.fondo = pygame.image.load(ruta_fondo)
@@ -490,9 +496,9 @@ class Interfaz:
         texto = (
             "En el Modo Clásico se juega con una matriz de 6x6 .\n"
             "Cada matriz tiene 18 imágenes distintas con sus parejas.\n"
-            "El jugador tiene 10 segundos para hacer cada jugada.\n"
+            "El jugador tiene un tiempo en segundos para hacer cada jugada.\n"
             "Si falla, pasa el turno al otro jugador.\n"
-            "Gana quien use menos intentos para completar el juego."
+            "Gana quien logre completar su tablero primero."
         )
 
         boton_volver = Boton("Volver",self.ANCHO // 2 - 150,self.ALTO - 100,300, 60,self.como_jugar, self.fuente, interfaz=self)
@@ -558,25 +564,15 @@ class Interfaz:
         self.botones_visibles.clear()
         # Cargar imágenes con pygame
         path_base = os.path.join('assets', "Imágenes", "jugadores")
-        try:
-            img_mbappe = pygame.image.load(os.path.join(path_base, "mbappe.png"))
-            img_messi = pygame.image.load(os.path.join(path_base, "messi.png"))
-            img_cristiano = pygame.image.load(os.path.join(path_base, "cristiano.png"))
-
-            img_mbappe = pygame.transform.scale(img_mbappe, (100, 100))
-            img_messi = pygame.transform.scale(img_messi, (100, 100))
-            img_cristiano = pygame.transform.scale(img_cristiano, (100, 100))
-        except Exception as e:
-            print("Error cargando imágenes:", e)
-            return
+      
+   
 
         texto = (
-            "En este modo unijugador, el objetivo es memorizar un patrón que se mostrará al inicio.\n"
-            "El patrón consiste en una secuencia de imágenes que el jugador debe repetir en orden.\n"
-            "Al iniciar, el patrón tiene 3 casillas y aumenta en 1 con cada éxito.\n"
-            "El jugador tiene 12 segundos totales y 2 segundos para elegir cada casilla.\n"
-            "Si falla, el juego termina.\n"
-            "Ejemplo Mbappe, Messi, Cristiano"
+            "En este modo unijugador, el objetivo es memorizar un patrón .\n"
+            "El patrón consiste en una secuencia botones amarillos.\n"
+            "Al iniciar, el patrón tiene 3 casillas y aumenta en 1 .\n"
+            "El jugador tiene 12 segundos totales y 2 segundos para elegir .\n"
+            "Si falla, el juego termina .\n"
         )
 
         boton_volver = Boton(
@@ -595,27 +591,7 @@ class Interfaz:
                 txt_render = self.fuente.render(linea, True, self.BLANCO)
                 self.pantalla.blit(txt_render, (60, y_texto))
                 y_texto += txt_render.get_height() + 5
-            # Mostrar imágenes con check y cruz
-            y_imagenes = y_texto + 20
-            x_correcto = self.ANCHO // 2 - 500
-            x_incorrecto = self.ANCHO // 2 + 100
-
-            # Patrón correcto: Mbappe -> Messi -> Cristiano + check verde
-            self.pantalla.blit(img_mbappe, (x_correcto, y_imagenes))
-            self.pantalla.blit(img_messi, (x_correcto + 100, y_imagenes))
-            self.pantalla.blit(img_cristiano, (x_correcto + 200, y_imagenes))
-
-            check_verde = self.fuente_titulo.render("SI", True, (0, 255, 0))
-            self.pantalla.blit(check_verde, (x_correcto + 330, y_imagenes + 30))
-
-            # Patrón incorrecto: Messi -> Cristiano -> Mbappe + cruz roja
-            self.pantalla.blit(img_messi, (x_incorrecto, y_imagenes))
-            self.pantalla.blit(img_cristiano, (x_incorrecto + 110, y_imagenes))
-            self.pantalla.blit(img_mbappe, (x_incorrecto + 220, y_imagenes))
-
-            cruz_roja = self.fuente_titulo.render("NO", True, (255, 0, 0))
-            self.pantalla.blit(cruz_roja, (x_incorrecto + 330, y_imagenes + 30))
-
+         
             # Botón volver
             for evento in pygame.event.get():
                 if evento.type == pygame.QUIT:
@@ -736,8 +712,10 @@ class Interfaz:
                                 print(f"Resultado: {resultado}")
                                 if resultado == 'correcto':
                                     boton.color_normal = pygame.Color("green")
+                                    self.sonido.reproducir_check()
                                 elif resultado == 'incorrecto':
                                     boton.color_normal = pygame.Color("red")
+                                    self.sonido.reproducir_error()
                                 elif resultado == 'completado':
                                     print("✅ ¡Patrón completado! Nuevo nivel...")
 
@@ -1027,9 +1005,10 @@ class Interfaz:
             interfaz=self
         )
 
-        # Título
-        fuente_titulo = pygame.font.SysFont('Segoe UI', 30, True)
-        texto_titulo = "Modo Multijugador"
+        # Variables para control de delay al fallo
+        delay_fallo_activo = False
+        delay_fallo_inicio = 0
+        delay_fallo_duracion = 0.8  # segundos
 
         # Parámetros del tablero
         ancho_btn = 80
@@ -1088,7 +1067,6 @@ class Interfaz:
                 self.botones_jugador2[fila][col].imagen = img2
                 self.botones_jugador2[fila][col].disabled = True
 
-        # Dibujar tableros con imágenes visibles
         self.ActualizaAmbosTableros()
         pygame.time.delay(3000)  # Mostrar por 3 segundos
 
@@ -1109,9 +1087,6 @@ class Interfaz:
                 self.pantalla.blit(self.fondo, (0, 0))
 
             # Dibujar título centrado arriba
-            titulo_render = fuente_titulo.render(texto_titulo, True, self.BLANCO)
-            self.pantalla.blit(titulo_render, (self.ANCHO // 2 - titulo_render.get_width() // 2, 30))
-
             nombre_j1_render = self.fuente.render(nombre_j1, True, self.BLANCO)
             nombre_j2_render = self.fuente.render(nombre_j2, True, self.BLANCO)
 
@@ -1125,57 +1100,127 @@ class Interfaz:
             linea_x = self.ANCHO // 2
             pygame.draw.line(self.pantalla, pygame.Color("white"), (linea_x, start_y - 20), (linea_x, start_y + tablero_alto + 20), 4)
 
+            # Mostrar turno actual
+            texto_turno = f"Turno: Jugador {self.ModoJuego.TurnoActual}"
+            turno_render = self.fuente.render(texto_turno, True, self.BLANCO)
+            self.pantalla.blit(turno_render, (self.ANCHO // 2 - turno_render.get_width() // 2, 10))
+
+            # Mostrar tiempo restante
+            tiempo_pasado = time.time() - self.ModoJuego.TiempoInicioTurno
+            tiempo_restante = max(0, int(self.ModoJuego.TiempoRestante - tiempo_pasado))
+            tiempo_render = self.fuente.render(f"Tiempo: {tiempo_restante}s", True, self.BLANCO)
+            self.pantalla.blit(tiempo_render, (self.ANCHO // 2 - tiempo_render.get_width() // 2, 50))
+
             # Dibujar botón pausa
             btn_pausa.dibujar(self.pantalla)
 
-            # Dibujar botones de jugador 1
+            # Dibujar botones jugador 1
             for fila_botones in self.botones_jugador1:
                 for btn in fila_botones:
                     btn.dibujar(self.pantalla)
 
-            # Dibujar botones de jugador 2
+            # Dibujar botones jugador 2
             for fila_botones in self.botones_jugador2:
                 for btn in fila_botones:
                     btn.dibujar(self.pantalla)
 
-            for evento in pygame.event.get():
-                if evento.type == pygame.QUIT:
-                    self.salir()
+            # Mostrar imágenes de turno debajo de cada tablero
+            y_img_turno = start_y + tablero_alto + 10
+            x_img_turno_1 = start_x_1 + (tablero_ancho // 2) - (self.img_turno_on.get_width() // 2)
+            x_img_turno_2 = start_x_2 + (tablero_ancho // 2) - (self.img_turno_off.get_width() // 2)
 
-                btn_pausa.manejar_evento(evento)
+            if self.ModoJuego.TurnoActual == 1:
+                self.pantalla.blit(self.img_turno_on, (x_img_turno_1, y_img_turno))
+                self.pantalla.blit(self.img_turno_off, (x_img_turno_2, y_img_turno))
+            else:
+                self.pantalla.blit(self.img_turno_off, (x_img_turno_1, y_img_turno))
+                self.pantalla.blit(self.img_turno_on, (x_img_turno_2, y_img_turno))
 
-                if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
-                    # Determinar jugador actual
+            # Verificar si estamos en delay de fallo para ocultar cartas y cambiar turno
+            if delay_fallo_activo:
+                if time.time() - delay_fallo_inicio >= delay_fallo_duracion:
+                    # Ya pasó el delay, ocultar cartas fallidas
                     jugador_actual = self.ModoJuego.TurnoActual
+                    botones_actuales = self.botones_jugador1 if jugador_actual == 1 else self.botones_jugador2
+                    for f, c in self.ModoJuego.CartasSeleccionadas:
+                        botones_actuales[f][c].imagen = None
+                        botones_actuales[f][c].disabled = False
 
-                    # Detectar cuál botón fue presionado
-                    botones = self.botones_jugador1 if jugador_actual == 1 else self.botones_jugador2
-                    for fila in range(6):
-                        for col in range(6):
-                            boton = botones[fila][col]
-                            if boton.rect.collidepoint(evento.pos) and not boton.disabled:
-                                imagen = self.ModoJuego.TableroJugador1[fila][col] if jugador_actual == 1 else self.ModoJuego.TableroJugador2[fila][col]
-                                boton.imagen = imagen
-                                boton.disabled = True  # Bloquear durante evaluación
+                    self.ModoJuego.CartasSeleccionadas.clear()
 
-                                resultado = self.ModoJuego.SeleccionarCasilla(jugador_actual, fila, col)
+                    # Cambiar turno tras fallo
+                    self.ModoJuego.TurnoActual = 2 if jugador_actual == 1 else 1
+                    self.ModoJuego.ReiniciarTiempo()
 
-                                if resultado == "esperando":
-                                    pass  # Aún falta la segunda carta
-                                elif resultado == "acierto":
-                                    self.ModoJuego.ReiniciarTiempo(bonificacion=7)
-                                elif resultado == "fallo":
-                                    pygame.time.delay(800)  # Esperar antes de ocultar
-                                    for f, c in self.ModoJuego.CartasSeleccionadas:
-                                        self.botones_jugador1[f][c].imagen = None if jugador_actual == 1 else self.botones_jugador1[f][c].imagen
-                                        self.botones_jugador2[f][c].imagen = None if jugador_actual == 2 else self.botones_jugador2[f][c].imagen
-                                        self.botones_jugador1[f][c].disabled = False if jugador_actual == 1 else self.botones_jugador1[f][c].disabled
-                                        self.botones_jugador2[f][c].disabled = False if jugador_actual == 2 else self.botones_jugador2[f][c].disabled
+                    delay_fallo_activo = False
+            else:
+                # Manejo de eventos sólo si no estamos en delay para evitar clicks durante espera
+                for evento in pygame.event.get():
+                    if evento.type == pygame.QUIT:
+                        self.salir()
 
-                                    self.ModoJuego.CartasSeleccionadas.clear()
-                self.VerificarCursor()
-                pygame.display.flip()
-                self.reloj.tick(self.FPS)
+                    btn_pausa.manejar_evento(evento)
+
+                    if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
+                        jugador_actual = self.ModoJuego.TurnoActual
+                        botones = self.botones_jugador1 if jugador_actual == 1 else self.botones_jugador2
+
+                        for fila in range(6):
+                            for col in range(6):
+                                boton = botones[fila][col]
+                                if boton.rect.collidepoint(evento.pos) and not boton.disabled:
+                                    imagen = self.ModoJuego.TableroJugador1[fila][col] if jugador_actual == 1 else self.ModoJuego.TableroJugador2[fila][col]
+                                    boton.imagen = imagen
+                                    boton.disabled = True
+
+                                    resultado = self.ModoJuego.SeleccionarCasilla(jugador_actual, fila, col)
+
+                                    if resultado == "esperando":
+                                        pass
+                                    elif resultado == "acierto":
+                                        self.sonido.reproducir_check()  # ✅ SONIDO DE ACIERTO
+                                        self.ModoJuego.ReiniciarTiempo(bonificacion=7)
+                                    elif resultado == "fallo":
+                                        self.sonido.reproducir_error()  # ❌ SONIDO DE FALLO
+                                        delay_fallo_activo = True
+                                        delay_fallo_inicio = time.time()
+
+
+                    self.VerificarCursor()
+
+            # Verificar tiempo agotado para cambio de turno, pero solo si no estamos en delay
+            if not delay_fallo_activo and self.ModoJuego.TiempoAgotado():
+                # Cambiar turno
+                self.ModoJuego.TurnoActual = 2 if self.ModoJuego.TurnoActual == 1 else 1
+                self.ModoJuego.CartasSeleccionadas.clear()
+                self.ModoJuego.ReiniciarTiempo()
+
+                # Resetear imágenes seleccionadas que no son aciertos
+                botones_actuales = self.botones_jugador1 if self.ModoJuego.TurnoActual == 1 else self.botones_jugador2
+                for fila in range(6):
+                    for col in range(6):
+                        btn = botones_actuales[fila][col]
+                        if btn.disabled and (fila, col) not in (self.ModoJuego.ParesEncontradosJ1 + self.ModoJuego.ParesEncontradosJ2):
+                            btn.imagen = None
+                            btn.disabled = False
+
+
+            if len(self.ModoJuego.ParesEncontradosJ1) == 36 or len(self.ModoJuego.ParesEncontradosJ2) == 36:
+                if len(self.ModoJuego.ParesEncontradosJ1) > len(self.ModoJuego.ParesEncontradosJ2):
+                    mensaje_ganador = f"¡{nombre_j1} gana!"
+                elif len(self.ModoJuego.ParesEncontradosJ2) > len(self.ModoJuego.ParesEncontradosJ1):
+                    mensaje_ganador = f"¡{nombre_j2} gana!"
+                else:
+                    mensaje_ganador = "¡Empate!"
+
+                self.mostrar_ventana_ganador(mensaje_ganador)
+                return  # salir del loop para mostrar la ventana del ganador
+
+
+
+            pygame.display.flip()
+            self.reloj.tick(self.FPS)
+
 
     def OtorgarParticipacion(self, monto=5):
         """
@@ -1249,8 +1294,43 @@ class Interfaz:
             self.VerificarCursor()
             pygame.display.flip()
             self.reloj.tick(self.FPS)
+    def mostrar_ventana_ganador(self, mensaje_ganador):
+        self.botones_visibles.clear()
 
-    # --- PANTALLAS ---
+        btn_volver = Boton(
+            "Volver al Menú",
+            self.ANCHO // 2 - 200, self.ALTO // 2 + 100,
+            400, 60,
+            lambda: self.ir_a_menu(),
+            self.fuente,
+            interfaz=self
+        )
+        btn_volver.color_normal = self.CYAN_OSCURO
+        btn_volver.fg_color = pygame.Color("black")
+
+        fuente_titulo = pygame.font.SysFont('Segoe UI', 40, True)
+        texto = fuente_titulo.render(mensaje_ganador, True, self.BLANCO)
+
+        ventana_activa = True
+        while ventana_activa:
+            self.pantalla.fill(self.FONDO_GRIS)
+            if self.fondo:
+                self.pantalla.blit(self.fondo, (0, 0))
+
+            self.pantalla.blit(texto, (self.ANCHO // 2 - texto.get_width() // 2, self.ALTO // 2 - 50))
+
+            btn_volver.dibujar(self.pantalla)
+
+            for evento in pygame.event.get():
+                if evento.type == pygame.QUIT:
+                    self.salir()
+                if btn_volver.manejar_evento(evento):
+                    ventana_activa = False  # Se cerrará la ventana y volverá al menú
+
+            self.VerificarCursor()
+            pygame.display.flip()
+            self.reloj.tick(self.FPS)
+
 
     def pantalla_inicio(self):
         """
